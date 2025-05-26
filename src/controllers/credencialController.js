@@ -31,6 +31,24 @@ const guardarCredencial = (req, res) => {
   });
 };
 
+// GET: Obtener todas las credenciales
+const obtenerCredenciales = (req, res) => {
+  const query = `
+    SELECT id_credencial, curp, clave_elector, anio_registro, vigencia
+    FROM credencial
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error al obtener las credenciales.' });
+    }
+
+    res.status(200).json(results);
+  });
+};
+
 module.exports = {
-  guardarCredencial
+  guardarCredencial,
+  obtenerCredenciales
 };
