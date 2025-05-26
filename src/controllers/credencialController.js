@@ -48,7 +48,32 @@ const obtenerCredenciales = (req, res) => {
   });
 };
 
+// GET: Obtener credencial por CURP
+const obtenerCredencialPorCurp = (req, res) => {
+  const { curp } = req.params;
+
+  const query = `
+    SELECT id_credencial, curp, clave_elector, anio_registro, vigencia
+    FROM credencial
+    WHERE curp = ?
+  `;
+
+  db.query(query, [curp], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error al obtener la credencial por CURP.' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'No se encontró una credencial con esa CURP.' });
+    }
+
+    res.status(200).json(results[0]);
+  });
+};
+
 module.exports = {
   guardarCredencial,
-  obtenerCredenciales
+  obtenerCredenciales,
+  obtenerCredencialPorCurp
 };
