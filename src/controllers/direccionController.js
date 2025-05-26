@@ -41,6 +41,25 @@ const guardarDireccion = (req, res) => {
   );
 };
 
+// GET: Obtener todas las direcciones
+const obtenerDirecciones = (req, res) => {
+  const query = `
+    SELECT id_direccion, calle, numero_exterior, numero_interior, colonia, municipio, estado, cp, seccion
+    FROM direccion
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error al obtener las direcciones.' });
+    }
+
+    res.status(200).json(results);
+  });
+};
+
+
 module.exports = {
-  guardarDireccion
+  guardarDireccion,
+  obtenerDirecciones
 };
