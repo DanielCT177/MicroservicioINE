@@ -9,5 +9,7 @@ router.get('/personaCurp/:curp', ineController.obtenerPersonaPorCurp);
 router.delete('/deletePersonaCurp/:curp', ineController.eliminarPersonaPorCurp);
 
 
+router.post('/guardarCredencial', ineController.guardarCredencial);
+
 
 module.exports = router;
