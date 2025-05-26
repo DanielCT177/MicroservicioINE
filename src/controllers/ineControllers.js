@@ -172,72 +172,68 @@ const obtenerPersonaPorCurp = async (req, res) => {
   }
 };
 
-// Eliminar persona por CURP
-const eliminarPersonaPorCurp = (req, res) => {
+const eliminarPersonaPorCurp = async (req, res) => {
   const { curp } = req.params;
 
-  // Buscar la credencial por curp
-  const buscarCredencialQuery = 'SELECT id FROM credencial WHERE curp = ?';
+  if (!curp) {
+    return res.status(400).json({ error: 'El CURP es obligatorio.' });
+  }
 
-  db.query(buscarCredencialQuery, [curp], (err, credencialResult) => {
-    if (err) {
-      console.error('Error al buscar credencial:', err);
-      return res.status(500).json({ error: 'Error al buscar credencial' });
+  try {
+    // Obtener todas las personas completas
+    const response = await fetch('http://localhost:3000/api/ine/obtenerPersonas');
+
+    if (!response.ok) {
+      return res.status(500).json({ error: 'Error al obtener personas.' });
     }
 
-    if (credencialResult.length === 0) {
-      return res.status(404).json({ message: 'CURP no encontrada' });
+    const personas = await response.json();
+
+    // Buscar persona por curp
+    const personaEncontrada = personas.find(p => p.credencial && p.credencial.curp === curp);
+
+    if (!personaEncontrada) {
+      return res.status(404).json({ error: 'No se encontró ninguna persona con ese CURP.' });
     }
 
-    const credencialId = credencialResult[0].id;
+    const { id_persona, direccion_id } = personaEncontrada;
 
-    // Buscar la persona asociada a esa credencial
-    const buscarPersonaQuery = 'SELECT id, domicilio_id FROM personas WHERE credencial_id = ?';
-
-    db.query(buscarPersonaQuery, [credencialId], (err, personaResult) => {
-      if (err) {
-        console.error('Error al buscar persona:', err);
-        return res.status(500).json({ error: 'Error al buscar persona' });
-      }
-
-      if (personaResult.length === 0) {
-        return res.status(404).json({ message: 'Persona no encontrada para esta CURP' });
-      }
-
-      const personaId = personaResult[0].id;
-      const domicilioId = personaResult[0].domicilio_id;
-
-      // Eliminar persona
-      const eliminarPersonaQuery = 'DELETE FROM personas WHERE id = ?';
-      db.query(eliminarPersonaQuery, [personaId], (err) => {
-        if (err) {
-          console.error('Error al eliminar persona:', err);
-          return res.status(500).json({ error: 'Error al eliminar persona' });
-        }
-
-        // Eliminar domicilio
-        const eliminarDomicilioQuery = 'DELETE FROM domicilios WHERE id = ?';
-        db.query(eliminarDomicilioQuery, [domicilioId], (err) => {
-          if (err) {
-            console.error('Error al eliminar domicilio:', err);
-            return res.status(500).json({ error: 'Error al eliminar domicilio' });
-          }
-
-          // Eliminar credencial
-          const eliminarCredencialQuery = 'DELETE FROM credencial WHERE id = ?';
-          db.query(eliminarCredencialQuery, [credencialId], (err) => {
-            if (err) {
-              console.error('Error al eliminar credencial:', err);
-              return res.status(500).json({ error: 'Error al eliminar credencial' });
-            }
-
-            res.status(200).json({ message: 'Registro eliminado correctamente' });
-          });
-        });
-      });
+    // Eliminar dirección
+    const eliminarDireccionResponse = await fetch(`http://localhost:3000/api/ine/eliminarDireccionPorId/${direccion_id}`, {
+      method: 'DELETE'
     });
-  });
+
+    if (!eliminarDireccionResponse.ok) {
+      return res.status(500).json({ error: 'Error al eliminar la dirección.' });
+    }
+
+    // Eliminar credencial
+    const eliminarCredencialResponse = await fetch(`http://localhost:3000/api/ine/eliminarCredencialPorCurp/${curp}`, {
+      method: 'DELETE'
+    });
+
+    if (!eliminarCredencialResponse.ok) {
+      return res.status(500).json({ error: 'Error al eliminar la credencial.' });
+    }
+
+    // Eliminar persona directamente en la base de datos
+    const deleteQuery = `DELETE FROM persona WHERE id_persona = ?`;
+
+    db.query(deleteQuery, [id_persona], (err, result) => {
+      if (err) {
+        console.error('Error al eliminar persona:', err);
+        return res.status(500).json({ error: 'Error al eliminar la persona.' });
+      }
+
+      res.json({ message: 'Persona, dirección y credencial eliminadas correctamente.' });
+    });
+
+  } catch (error) {
+    console.error('Error en eliminarPersonaPorCurp:', error);
+    res.status(500).json({ error: 'Error al eliminar la persona por CURP.' });
+  }
 };
+
 
 module.exports = {
   guardarPersona,
