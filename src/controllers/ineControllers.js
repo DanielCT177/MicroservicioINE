@@ -139,47 +139,37 @@ const obtenerPersonas = async (req, res) => {
   }
 };
 
-const obtenerPersonaPorCurp = (req, res) => {
+const obtenerPersonaPorCurp = async (req, res) => {
   const { curp } = req.params;
 
-  const query = `
-    SELECT 
-      p.id AS id,
-      p.nombre,
-      p.apellido_paterno,
-      p.apellido_materno,
-      p.fecha_nacimiento,
-      p.sexo,
-      c.curp,
-      c.clave_elector,
-      c.anio_registro,
-      c.vigencia,
-      d.seccion,
-      d.calle,
-      d.numero_exterior,
-      d.numero_interior,
-      d.colonia,
-      d.municipio,
-      d.estado,
-      d.cp
-    FROM personas p
-    JOIN credencial c ON p.credencial_id = c.id
-    JOIN domicilios d ON p.domicilio_id = d.id
-    WHERE c.curp = ?
-  `;
+  if (!curp) {
+    return res.status(400).json({ error: 'El CURP es obligatorio.' });
+  }
 
-  db.query(query, [curp], (err, results) => {
-    if (err) {
-      console.error('Error al obtener persona:', err);
-      return res.status(500).json({ error: 'Error al obtener los datos' });
+  try {
+    // Fetch de todas las personas completas
+    const response = await fetch('http://localhost:3000/api/ine/obtenerPersonas');
+
+    if (!response.ok) {
+      return res.status(500).json({ error: 'Error al obtener personas.' });
     }
 
-    if (results.length === 0) {
-      return res.status(404).json({ message: 'Persona no encontrada' });
+    const personas = await response.json();
+
+    // Buscar la persona que coincida con el CURP en su credencial
+    const personaEncontrada = personas.find(p => p.credencial && p.credencial.curp === curp);
+
+    if (!personaEncontrada) {
+      return res.status(404).json({ error: 'No se encontró ninguna persona con ese CURP.' });
     }
 
-    res.status(200).json(results[0]);
-  });
+    // Devolver la persona encontrada
+    res.json(personaEncontrada);
+
+  } catch (error) {
+    console.error('Error en obtenerPersonaPorCurp:', error);
+    res.status(500).json({ error: 'Error al obtener la persona por CURP.' });
+  }
 };
 
 // Eliminar persona por CURP

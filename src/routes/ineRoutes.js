@@ -6,8 +6,8 @@ const direccionController = require('../controllers/direccionController');
 
 router.post('/guardarPersona', ineController.guardarPersona);
 router.get('/obtenerPersonas', ineController.obtenerPersonas);
+router.get('/obtenerPersonaPorCurp/:curp', ineController.obtenerPersonaPorCurp);
 
-router.get('/personaCurp/:curp', ineController.obtenerPersonaPorCurp);
 router.delete('/deletePersonaCurp/:curp', ineController.eliminarPersonaPorCurp);
 
 //TABLA CREDENCIAL
