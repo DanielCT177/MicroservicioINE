@@ -105,10 +105,53 @@ const eliminarDireccionPorId = (req, res) => {
   });
 };
 
+/*// PUT: Actualizar dirección por ID
+const actualizarDireccionPorId = (req, res) => {
+  const { id } = req.params;
+  const {
+    calle,
+    numero_exterior,
+    numero_interior,
+    colonia,
+    municipio,
+    estado,
+    cp,
+    seccion
+  } = req.body;
+
+  // Validación básica: puedes ajustar según necesites
+  if (!calle || !seccion) {
+    return res.status(400).json({ error: 'Calle y sección son obligatorios.' });
+  }
+
+  const query = `
+    UPDATE direccion
+    SET calle = ?, numero_exterior = ?, numero_interior = ?, colonia = ?, municipio = ?, estado = ?, cp = ?, seccion = ?
+    WHERE id_direccion = ?
+  `;
+
+  db.query(query,
+    [calle, numero_exterior, numero_interior, colonia, municipio, estado, cp, seccion, id],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Error al actualizar la dirección.' });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Dirección no encontrada.' });
+      }
+
+      res.status(200).json({ message: 'Dirección actualizada correctamente.' });
+    }
+  );
+};
+*/
 
 module.exports = {
   guardarDireccion,
   obtenerDirecciones,
   obtenerDireccionPorId,
-  eliminarDireccionPorId
+  eliminarDireccionPorId,
+  //actualizarDireccionPorId
 };
