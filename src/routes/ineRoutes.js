@@ -20,6 +20,6 @@ router.delete('/eliminarCredencialPorCurp/:curp', credencialController.eliminarC
 //TABLA DIRECCION
 router.post('/guardarDireccion', direccionController.guardarDireccion);
 router.get('/obtenerDirecciones', direccionController.obtenerDirecciones);
-
+router.get('/obtenerDireccionPorId/:id', direccionController.obtenerDireccionPorId);
 
 module.exports = router;

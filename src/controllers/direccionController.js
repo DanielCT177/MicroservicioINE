@@ -58,8 +58,33 @@ const obtenerDirecciones = (req, res) => {
   });
 };
 
+// GET: Obtener dirección por ID
+const obtenerDireccionPorId = (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT id_direccion, calle, numero_exterior, numero_interior, colonia, municipio, estado, cp, seccion
+    FROM direccion
+    WHERE id_direccion = ?
+  `;
+
+  db.query(query, [id], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error al obtener la dirección.' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Dirección no encontrada.' });
+    }
+
+    res.status(200).json(results[0]);
+  });
+};
+
 
 module.exports = {
   guardarDireccion,
-  obtenerDirecciones
+  obtenerDirecciones,
+  obtenerDireccionPorId
 };
