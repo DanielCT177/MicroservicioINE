@@ -1,6 +1,7 @@
 const db = require('../config/db');
+const { v4: uuidv4 } = require('uuid');
 
-const guardarPersona = (req, res) => {
+const guardarPersona = async (req, res) => {
   const {
     nombre,
     apellido_paterno,
@@ -21,69 +22,79 @@ const guardarPersona = (req, res) => {
     seccion
   } = req.body;
 
-  // 1️⃣ Insertar en credencial
-  const credencialQuery = `
-    INSERT INTO credencial (curp, clave_elector, anio_registro, vigencia)
-    VALUES (?, ?, ?, ?)
-  `;
 
-  const credencialValues = [curp, clave_elector, anio_registro, vigencia];
+  const credencialValues = {curp, clave_elector, anio_registro, vigencia};
 
-  db.query(credencialQuery, credencialValues, (err, credencialResult) => {
-    if (err) {
-      console.error('Error al insertar en credencial:', err);
-      return res.status(500).json({ error: 'Error al guardar credencial' });
+  const direccionValues = {calle, numero_exterior, numero_interior, colonia, municipio, estado, cp, seccion};
+
+  try {
+    // Enviar credencial
+    const responseCredencial = await fetch('http://localhost:3000/api/ine/guardarCredencial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credencialValues)
+    });
+
+    const dataCredencial = await responseCredencial.json();
+
+    if (!responseCredencial.ok) {
+      return res.status(500).json({ error: 'Error al insertar credencial.' });
     }
 
-    const credencialId = credencialResult.insertId;
+    const id_credencial = dataCredencial.id_credencial;
 
-    // 2️⃣ Insertar en domicilios
-    const domicilioQuery = `
-      INSERT INTO domicilios (calle, numero_exterior, numero_interior, colonia, municipio, estado, cp, seccion)
+    // Enviar dirección
+    const responseDireccion = await fetch('http://localhost:3000/api/ine/guardarDireccion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(direccionValues)
+    });
+
+    const dataDireccion = await responseDireccion.json();
+
+    if (!responseDireccion.ok) {
+      return res.status(500).json({ error: 'Error al insertar dirección.' });
+    }
+
+    const id_direccion = dataDireccion.id_direccion;
+
+    // Generar UUID para persona
+    const id_persona = uuidv4();
+
+    // Insertar persona
+    const queryPersona = `
+      INSERT INTO persona (id_persona, nombre, apellido_paterno, apellido_materno, fecha_nacimiento, sexo, credencial_id, direccion_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const domicilioValues = [calle, numero_exterior, numero_interior, colonia, municipio, estado, cp, seccion];
-
-    db.query(domicilioQuery, domicilioValues, (err, domicilioResult) => {
+    db.query(queryPersona, [
+      id_persona,
+      nombre,
+      apellido_paterno,
+      apellido_materno,
+      fecha_nacimiento,
+      sexo,
+      id_credencial,
+      id_direccion
+    ], (err, resultPersona) => {
       if (err) {
-        console.error('Error al insertar en domicilios:', err);
-        return res.status(500).json({ error: 'Error al guardar domicilio' });
+        console.error('Error al insertar persona:', err);
+        return res.status(500).json({ error: 'Error al insertar persona.' });
       }
 
-      const domicilioId = domicilioResult.insertId;
-
-      // 3️⃣ Insertar en personas
-      const personaQuery = `
-        INSERT INTO personas (nombre, apellido_paterno, apellido_materno, fecha_nacimiento, sexo, credencial_id, domicilio_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `;
-
-      const personaValues = [
-        nombre,
-        apellido_paterno,
-        apellido_materno,
-        fecha_nacimiento,
-        sexo,
-        credencialId,
-        domicilioId
-      ];
-
-      db.query(personaQuery, personaValues, (err, personaResult) => {
-        if (err) {
-          console.error('Error al insertar en personas:', err);
-          return res.status(500).json({ error: 'Error al guardar persona' });
-        }
-
-        res.status(201).json({
-          message: 'Persona registrada correctamente',
-          personaId: personaResult.insertId,
-          credencialId: credencialId,
-          domicilioId: domicilioId
-        });
+      res.status(201).json({
+        message: 'Persona registrada correctamente.',
+        id_persona,
+        id_credencial,
+        id_direccion
       });
     });
-  });
+
+  } catch (error) {
+    console.error('Error en el proceso:', error);
+    res.status(500).json({ error: 'Error al registrar persona.' });
+  }
+  
 };
 
 const obtenerPersonasCompletas = (req, res) => {
