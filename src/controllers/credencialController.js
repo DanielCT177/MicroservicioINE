@@ -72,6 +72,29 @@ const obtenerCredencialPorCurp = (req, res) => {
   });
 };
 
+// DELETE: Eliminar credencial por CURP
+const eliminarCredencialPorCurp = (req, res) => {
+  const { curp } = req.params;
+
+  const query = `
+    DELETE FROM credencial
+    WHERE curp = ?
+  `;
+
+  db.query(query, [curp], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error al eliminar la credencial.' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'No se encontró una credencial con esa CURP.' });
+    }
+
+    res.status(200).json({ message: 'Credencial eliminada correctamente.' });
+  });
+};
+
 /*// PUT: Actualizar credencial por ID
 const actualizarCredencialPorId = (req, res) => {
   const { id } = req.params;
@@ -107,5 +130,6 @@ module.exports = {
   guardarCredencial,
   obtenerCredenciales,
   obtenerCredencialPorCurp,
+  eliminarCredencialPorCurp,
   //actualizarCredencialPorId
 };
