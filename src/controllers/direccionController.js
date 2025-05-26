@@ -82,9 +82,33 @@ const obtenerDireccionPorId = (req, res) => {
   });
 };
 
+// DELETE: Eliminar dirección por ID
+const eliminarDireccionPorId = (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    DELETE FROM direccion
+    WHERE id_direccion = ?
+  `;
+
+  db.query(query, [id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error al eliminar la dirección.' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Dirección no encontrada.' });
+    }
+
+    res.status(200).json({ message: 'Dirección eliminada correctamente.' });
+  });
+};
+
 
 module.exports = {
   guardarDireccion,
   obtenerDirecciones,
-  obtenerDireccionPorId
+  obtenerDireccionPorId,
+  eliminarDireccionPorId
 };
