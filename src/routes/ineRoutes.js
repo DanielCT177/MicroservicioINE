@@ -14,6 +14,7 @@ router.delete('/deletePersonaCurp/:curp', ineController.eliminarPersonaPorCurp);
 router.post('/guardarCredencial', credencialController.guardarCredencial);
 router.get('/obtenerCredencial', credencialController.obtenerCredenciales);
 router.get('/obtenerCredencialPorCurp/:curp', credencialController.obtenerCredencialPorCurp);
+//router.put('/actualizarCredencial/:id', credencialController.actualizarCredencialPorId);
 
 //TABLA DIRECCION
 router.post('/guardarDireccion', direccionController.guardarDireccion);

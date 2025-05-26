@@ -72,8 +72,40 @@ const obtenerCredencialPorCurp = (req, res) => {
   });
 };
 
+/*// PUT: Actualizar credencial por ID
+const actualizarCredencialPorId = (req, res) => {
+  const { id } = req.params;
+  const { curp, clave_elector, anio_registro, vigencia } = req.body;
+
+  // Validación simple
+  if (!curp || !clave_elector || !anio_registro || !vigencia) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+  }
+
+  const query = `
+    UPDATE credencial
+    SET curp = ?, clave_elector = ?, anio_registro = ?, vigencia = ?
+    WHERE id_credencial = ?
+  `;
+
+  db.query(query, [curp, clave_elector, anio_registro, vigencia, id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error al actualizar la credencial.' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Credencial no encontrada.' });
+    }
+
+    res.status(200).json({ message: 'Credencial actualizada correctamente.' });
+  });
+};
+*/
+
 module.exports = {
   guardarCredencial,
   obtenerCredenciales,
-  obtenerCredencialPorCurp
+  obtenerCredencialPorCurp,
+  //actualizarCredencialPorId
 };
