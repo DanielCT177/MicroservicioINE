@@ -97,40 +97,46 @@ const guardarPersona = async (req, res) => {
   
 };
 
-const obtenerPersonasCompletas = (req, res) => {
-  const query = `
-    SELECT 
-      p.id AS persona_id,
-      p.nombre,
-      p.apellido_paterno,
-      p.apellido_materno,
-      p.fecha_nacimiento,
-      p.sexo,
-      c.curp,
-      c.clave_elector,
-      c.anio_registro,
-      c.vigencia,
-      d.seccion,
-      d.calle,
-      d.numero_exterior,
-      d.numero_interior,
-      d.colonia,
-      d.municipio,
-      d.estado,
-      d.cp
-    FROM personas p
-    JOIN credencial c ON p.credencial_id = c.id
-    JOIN domicilios d ON p.domicilio_id = d.id;
-  `;
+const obtenerPersonas = async (req, res) => {
+  try {
+    // Obtener direcciones y credenciales vía fetch
+    const [resDirecciones, resCredenciales] = await Promise.all([
+      fetch('http://localhost:3000/api/ine/obtenerDirecciones'),
+      fetch('http://localhost:3000/api/ine/obtenerCredencial'),
+    ]);
 
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error al obtener los datos:', err);
-      return res.status(500).json({ error: 'Error al consultar los datos' });
+    if (!resDirecciones.ok || !resCredenciales.ok) {
+      return res.status(500).json({ error: 'Error al obtener datos de dirección o credencial.' });
     }
 
-    res.status(200).json(results);
-  });
+    const direcciones = await resDirecciones.json();
+    const credenciales = await resCredenciales.json();
+
+    // Consulta directa para obtener personas
+    db.query('SELECT * FROM persona', (err, personas) => {
+      if (err) {
+        console.error('Error al obtener personas:', err);
+        return res.status(500).json({ error: 'Error al obtener personas.' });
+      }
+
+      // Mapas para unión rápida
+      const mapaCredenciales = new Map(credenciales.map(c => [c.id_credencial, c]));
+      const mapaDirecciones = new Map(direcciones.map(d => [d.id_direccion, d]));
+
+      // Unir datos
+      const personasCompletas = personas.map(persona => ({
+        ...persona,
+        credencial: mapaCredenciales.get(persona.credencial_id) || null,
+        direccion: mapaDirecciones.get(persona.direccion_id) || null
+      }));
+
+      return res.json(personasCompletas);
+    });
+
+  } catch (error) {
+    console.error('Error en obtenerPersonasCompletas:', error);
+    res.status(500).json({ error: 'Error al obtener personas completas.' });
+  }
 };
 
 const obtenerPersonaPorId = (req, res) => {
@@ -288,7 +294,7 @@ const eliminarPersonaPorCurp = (req, res) => {
 
 module.exports = {
   guardarPersona,
-  obtenerPersonasCompletas,
+  obtenerPersonas,
   obtenerPersonaPorId,
   obtenerPersonaPorCurp,
   eliminarPersonaPorCurp

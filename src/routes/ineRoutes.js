@@ -5,7 +5,8 @@ const credencialController = require('../controllers/credencialController');
 const direccionController = require('../controllers/direccionController');
 
 router.post('/guardarPersona', ineController.guardarPersona);
-router.get('/personasAll', ineController.obtenerPersonasCompletas);
+router.get('/obtenerPersonas', ineController.obtenerPersonas);
+
 router.get('/personaId/:id', ineController.obtenerPersonaPorId);
 router.get('/personaCurp/:curp', ineController.obtenerPersonaPorCurp);
 router.delete('/deletePersonaCurp/:curp', ineController.eliminarPersonaPorCurp);
